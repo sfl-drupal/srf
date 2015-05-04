@@ -1,0 +1,180 @@
+<?php
+
+/**
+ * .module file : required for semi-required field module.
+ */
+
+/**
+ * Include field validate file
+ */
+module_load_include('inc', 'srf', 'srf.validate');
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+
+  // Transform status field, only for node field instance.
+  if ($form['#instance']['entity_type'] === 'node') {
+
+    // Get default value from conf.
+    $default_value = 0; // optional
+    if (isset($form['#instance']['required_for_publication'])
+      && $form['#instance']['required_for_publication'] == 1) {
+      $default_value = 1; // required only for publication
+    }
+    elseif ($form['#instance']['required'] == 1) {
+      $default_value = 2; // fully required
+    }
+
+    // Rewrite status field (to display radio buttons instead of checkbox).
+    $form['instance']['required'] = array(
+      '#type' => 'radios',
+      '#title' => t('Field status'),
+      '#required' => TRUE,
+      '#default_value' => $default_value,
+      '#options' => array(
+        t('Optional'),
+        t('Required') . ' ' .  t('(only for publication)'),
+        t('Required'),
+      ),
+      '#weight' => -10,
+    );
+
+    // Add a new form validate function.
+    $form['#validate'][] = 'srf_field_ui_field_edit_form_validate';
+  }
+}
+
+/**
+ * Form validate function to re-create normal structure
+ * for field instance configuration.
+ */
+function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
+  $required_state = $form_state['values']['instance']['required'];
+  switch ($required_state) {
+
+    // Optional field.
+    case '0':
+      $form_state['values']['instance']['required'] = 0;
+      $form_state['values']['instance']['required_for_publication'] = 0;
+      break;
+
+    // Required field (only for publication).
+    case '1':
+      $form_state['values']['instance']['required'] = 0;
+      $form_state['values']['instance']['required_for_publication'] = 1;
+      break;
+
+    // Fully required field.
+    case '2':
+      $form_state['values']['instance']['required'] = 1;
+      $form_state['values']['instance']['required_for_publication'] = 0;
+      break;
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function srf_field_widget_form_alter(&$element, &$form_state, $context) {
+
+  // Alter field label if instance is required only for publication.
+  if (isset($context['instance']['required_for_publication'])
+    && $context['instance']['required_for_publication'] == 1) {
+
+    // Include callbacks file.
+    module_load_include('inc', 'srf', 'srf.callbacks');
+
+    // As $element structure depends on the type of field,
+    // let's pass it through a function to alter correctly field label.
+    $alter_widget = srf_get_alter_widget();
+    $field_type = $context['field']['type'];
+    if (isset($alter_widget[$field_type]['callback'])
+      && function_exists($alter_widget[$field_type]['callback'])) {
+      $alter_widget[$field_type]['callback']($element);
+    }
+    else {
+      drupal_set_message(t('To alter the widget title and add the semi required validation to <strong>@field_label</strong> field (<em>@field_type</em>), you need to implement hook_srf_alter_widget and configure it according to the !readme_link or the <strong>srf.api.php</strong>.', array(
+          '@field_label' => $context['instance']['label'],
+          '@field_type' => $field_type,
+          '!readme_link' => l('README.txt', drupal_get_path('module', 'srf') . '/README.txt', array('attributes' => array('target' => '_blank'))),
+        )), 'warning');
+    }
+  }
+}
+
+/**
+ * Get alter label list by calling srf_alter_widget hook,
+ * and store result in a static variable.
+ * @return  array  List of widget alteration
+ */
+function srf_get_alter_widget() {
+  $alter_widget = &drupal_static(__FUNCTION__);
+  if (!isset($alter_widget)) {
+    $alter_widget = module_invoke_all('srf_alter_widget');
+    drupal_alter('srf_alter_widget', $alter_widget);
+  }
+  return $alter_widget;
+}
+
+/**
+ * Implements hook_srf_alter_widget().
+ */
+function srf_srf_alter_widget() {
+  $alter_widget = array();
+
+  $alter_widget['text_long'] = array(
+    'callback' => 'srf_text_long_alter_widget',
+  );
+
+  $alter_widget['text_with_summary'] = array(
+    'callback' => 'srf_text_with_summary_alter_widget',
+  );
+
+  $alter_widget['entityreference'] = array(
+    'callback' => 'srf_entityreference_alter_widget',
+  );
+
+  $alter_widget['taxonomy_term_reference'] = array(
+    'callback' => 'srf_taxonomy_term_reference_alter_widget',
+  );
+
+  $alter_widget['image'] = array(
+    'callback' => 'srf_image_alter_widget',
+  );
+
+  return $alter_widget;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function srf_theme($existing, $type, $theme, $path) {
+  $themes = array();
+
+  $themes['srf_field_label'] = array(
+    'variables' => array(
+      'vars' => array(),
+    ),
+  );
+
+  return $themes;
+}
+
+/**
+ * Theme function for srf_field_label.
+ */
+function theme_srf_field_label($vars) {
+
+  // Add a litle CSS to design semi-required span.
+  drupal_add_css(drupal_get_path('module', 'srf') . '/css/styles.css');
+
+  // Add the semi-required span to field label.
+  $altered_label = $vars['title'] . ' '
+    . '<span class="form-semi-required" title="'
+    . t('This field is required for publication only.')
+    . '">*</span>';
+
+  return $altered_label;
+}

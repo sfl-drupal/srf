@@ -1,0 +1,7 @@
+name = Semi Required Field
+description = To set a node field required, but only for publication.
+core = 7.x
+package = Fields
+
+dependencies[] = field
+dependencies[] = node
