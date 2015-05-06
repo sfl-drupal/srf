@@ -46,7 +46,8 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
 
       // Get default value from conf.
       $default_value = 0; // optional
-      if (isset($form['#instance']['workbench_moderation'])) {
+      if (isset($form['#instance']['workbench_moderation']) &&
+          workbench_moderation_node_type_moderated($form['#instance']['bundle']) ){
         $default_value = $form['#instance']['workbench_moderation'];
       }
 
@@ -91,7 +92,7 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
       }
       //Else show a message to recommend the user to enabled the moderation and the revisions
       else {
-        $form['instance']['workbench_moderation']['#description'] = t('Les révisions et la moderation doivent être activées pour pouvoir utiliser cette option.');
+        $form['instance']['workbench_moderation']['#description'] = t('Revisions and moderations must be enabled in order to use this functionality.');
         $form['instance']['workbench_moderation']['#disabled'] = TRUE;
       }
     }
@@ -121,6 +122,10 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
     case '1':
       $form_state['values']['instance']['required'] = 0;
       $form_state['values']['instance']['semi_required'] = 1;
+      if (!workbench_moderation_node_type_moderated($form['#instance']['bundle'])) {
+        $form_state['values']['instance']['workbench_moderation'] = 0;
+        $form_state['values']['instance']['workbench_moderation_status'] = array();
+      }
       break;
 
     // Fully required field.
