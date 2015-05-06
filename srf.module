@@ -3,7 +3,6 @@
 /**
  * .module file : required for semi-required field module.
  */
-
 /**
  * Include field validate file
  */
@@ -19,9 +18,8 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
 
     // Get default value from conf.
     $default_value = 0; // optional
-    if (isset($form['#instance']['required_for_publication'])
-      && $form['#instance']['required_for_publication'] == 1) {
-      $default_value = 1; // required only for publication
+    if (isset($form['#instance']['semi_required']) && $form['#instance']['semi_required'] == 1) {
+      $default_value = 1; // semi required
     }
     elseif ($form['#instance']['required'] == 1) {
       $default_value = 2; // fully required
@@ -29,17 +27,74 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
 
     // Rewrite status field (to display radio buttons instead of checkbox).
     $form['instance']['required'] = array(
-      '#type' => 'radios',
+      '#type' => 'select',
       '#title' => t('Field status'),
       '#required' => TRUE,
       '#default_value' => $default_value,
       '#options' => array(
         t('Optional'),
-        t('Required') . ' ' .  t('(only for publication)'),
+        t('Semi-Required'),
         t('Required'),
       ),
       '#weight' => -10,
     );
+
+    // Add a form if the workbench_moderation module is enabled to allow integrations
+    // with the status transitions
+    if (module_exists('workbench_moderation')) {
+      module_load_include('module', 'workbench_moderation');
+
+      // Get default value from conf.
+      $default_value = 0; // optional
+      if (isset($form['#instance']['workbench_moderation'])) {
+        $default_value = $form['#instance']['workbench_moderation'];
+      }
+
+      $form['instance']['workbench_moderation'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Enable integration with the module workbench_moderation.'),
+        '#default_value' => $default_value,
+        '#states' => array(
+          'visible' => array(
+            'select[name="instance[required]"]' => array('value' => 1)
+          )
+        ),
+        '#weight' => -9,
+      );
+
+      if (workbench_moderation_node_type_moderated($form['#instance']['bundle'])) {
+        // If the moderation is active for this content type
+        // Get default value from conf.
+        $default_value = 0; // optional
+        if (isset($form['#instance']['workbench_moderation_status'])) {
+          $default_value = $form['#instance']['workbench_moderation_status'];
+        }
+        // Get the status availabes
+        $options = array();
+        foreach (workbench_moderation_states() as $machine_name => $state) {
+          $options[$machine_name] = check_plain(workbench_moderation_state_label($machine_name));
+        }
+        // Create the form
+        $form['instance']['workbench_moderation_status'] = array(
+          '#type' => 'checkboxes',
+          '#title' => t('Status'),
+          '#default_value' => $default_value,
+          '#options' => $options,
+          '#states' => array(
+            'visible' => array(
+              'select[name="instance[required]"]' => array('value' => 1),
+              ':input[name="instance[workbench_moderation]"]' => array('checked' => TRUE)
+            )
+          ),
+          '#weight' => -8,
+        );
+      }
+      //Else show a message to recommend the user to enabled the moderation and the revisions
+      else {
+        $form['instance']['workbench_moderation']['#description'] = t('Les révisions et la moderation doivent être activées pour pouvoir utiliser cette option.');
+        $form['instance']['workbench_moderation']['#disabled'] = TRUE;
+      }
+    }
 
     // Add a new form validate function.
     $form['#validate'][] = 'srf_field_ui_field_edit_form_validate';
@@ -57,19 +112,23 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
     // Optional field.
     case '0':
       $form_state['values']['instance']['required'] = 0;
-      $form_state['values']['instance']['required_for_publication'] = 0;
+      $form_state['values']['instance']['semi_required'] = 0;
+      $form_state['values']['instance']['workbench_moderation'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = 0;
       break;
 
-    // Required field (only for publication).
+    // Semi Required field (only for publication or transitions if workbench_moderation is enabled).
     case '1':
       $form_state['values']['instance']['required'] = 0;
-      $form_state['values']['instance']['required_for_publication'] = 1;
+      $form_state['values']['instance']['semi_required'] = 1;
       break;
 
     // Fully required field.
     case '2':
       $form_state['values']['instance']['required'] = 1;
-      $form_state['values']['instance']['required_for_publication'] = 0;
+      $form_state['values']['instance']['semi_required'] = 0;
+      $form_state['values']['instance']['workbench_moderation'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = 0;
       break;
   }
 }
@@ -78,28 +137,76 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
  * Implements hook_field_widget_form_alter().
  */
 function srf_field_widget_form_alter(&$element, &$form_state, $context) {
-
   // Alter field label if instance is required only for publication.
-  if (isset($context['instance']['required_for_publication'])
-    && $context['instance']['required_for_publication'] == 1) {
+  if (isset($context['instance']['semi_required']) && $context['instance']['semi_required'] == 1) {
 
     // Include callbacks file.
     module_load_include('inc', 'srf', 'srf.callbacks');
+
+    // Add the validate function to the widget
+    if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
+      $element['#element_validate'][] = 'srf_field_widget_form_validate';
+    }
+    else {
+      $element['#element_validate'] = array('srf_field_widget_form_validate');
+    }
 
     // As $element structure depends on the type of field,
     // let's pass it through a function to alter correctly field label.
     $alter_widget = srf_get_alter_widget();
     $field_type = $context['field']['type'];
-    if (isset($alter_widget[$field_type]['callback'])
-      && function_exists($alter_widget[$field_type]['callback'])) {
-      $alter_widget[$field_type]['callback']($element);
+    if (isset($alter_widget[$field_type]['callback_alter']) && function_exists($alter_widget[$field_type]['callback_alter'])) {
+      $alter_widget[$field_type]['callback_alter']($element);
     }
     else {
       drupal_set_message(t('To alter the widget title and add the semi required validation to <strong>@field_label</strong> field (<em>@field_type</em>), you need to implement hook_srf_alter_widget and configure it according to the !readme_link or the <strong>srf.api.php</strong>.', array(
-          '@field_label' => $context['instance']['label'],
-          '@field_type' => $field_type,
-          '!readme_link' => l('README.txt', drupal_get_path('module', 'srf') . '/README.txt', array('attributes' => array('target' => '_blank'))),
-        )), 'warning');
+        '@field_label' => $context['instance']['label'],
+        '@field_type' => $field_type,
+        '!readme_link' => l('README.txt', drupal_get_path('module', 'srf') . '/README.txt', array('attributes' => array('target' => '_blank'))),
+          )), 'warning');
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_form_validate().
+ */
+function srf_field_widget_form_validate($element, &$form_state, $form) {
+  $validate = FALSE;
+  $field_name = $element['#field_name'];
+  // If the integration with the module workbench_moderation is enabled use the workbench status
+  if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) &&
+      $form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) {
+    // If the all the values are set and the workbench_moderation_status == workbench_moderation_state_new
+    // We will validate the field.
+    if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation_status']) &&
+        isset($form_state['values']['workbench_moderation_state_new']) &&
+        in_array($form_state['values']['workbench_moderation_state_new'], array_filter($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation_status']))
+    ) {
+      $validate = TRUE;
+    }
+  }
+  else {
+    if (isset($form_state['values']['status']) && $form_state['values']['status']) {
+      // If workbench_moderation is not enabled, validate the field if the node change the status to published
+      $validate = TRUE;
+    }
+  }
+  // Validate the field if needed
+  if ($validate) {
+    $alter_widget = srf_get_alter_widget();
+    $field_type = $form_state['field'][$field_name][LANGUAGE_NONE]['field']['type'];
+    // As $element structure depends on the type of field,
+    // let call the right validate function for the field
+    if (isset($alter_widget[$field_type]['callback_alter']) && function_exists($alter_widget[$field_type]['callback_validate'])) {
+      $alter_widget[$field_type]['callback_validate']($element, $form_state, $form);
+    }
+    else {
+      drupal_set_message(t('To add the semi required validation to <strong>@field_label</strong> field (<em>@field_type</em>), you need to implement hook_srf_alter_widget and configure it according to the !readme_link or the <strong>srf.api.php</strong>.', array(
+        '@field_label' => $form_state['field'][$field_name][LANGUAGE_NONE]['instance']['label'],
+        '@field_type' => $field_type,
+        '!readme_link' => l('README.txt', drupal_get_path('module', 'srf') . '/README.txt', array('attributes' => array('target' => '_blank'))),
+          )), 'warning');
     }
   }
 }
@@ -125,23 +232,28 @@ function srf_srf_alter_widget() {
   $alter_widget = array();
 
   $alter_widget['text_long'] = array(
-    'callback' => 'srf_text_long_alter_widget',
+    'callback_alter' => 'srf_text_long_alter_widget',
+    'callback_validate' => 'srf_text_long_validate',
   );
 
   $alter_widget['text_with_summary'] = array(
-    'callback' => 'srf_text_with_summary_alter_widget',
+    'callback_alter' => 'srf_text_with_summary_alter_widget',
+    'callback_validate' => 'srf_text_with_summary_validate',
   );
 
   $alter_widget['entityreference'] = array(
-    'callback' => 'srf_entityreference_alter_widget',
+    'callback_alter' => 'srf_entityreference_alter_widget',
+    'callback_validate' => 'srf_entityreference_validate',
   );
 
   $alter_widget['taxonomy_term_reference'] = array(
-    'callback' => 'srf_taxonomy_term_reference_alter_widget',
+    'callback_alter' => 'srf_taxonomy_term_reference_alter_widget',
+    'callback_validate' => 'srf_taxonomy_term_reference_validate',
   );
 
   $alter_widget['image'] = array(
-    'callback' => 'srf_image_alter_widget',
+    'callback_alter' => 'srf_image_alter_widget',
+    'callback_validate' => 'srf_image_validate',
   );
 
   return $alter_widget;
@@ -172,9 +284,9 @@ function theme_srf_field_label($vars) {
 
   // Add the semi-required span to field label.
   $altered_label = $vars['title'] . ' '
-    . '<span class="form-semi-required" title="'
-    . t('This field is required for publication only.')
-    . '">*</span>';
+      . '<span class="form-semi-required" title="'
+      . t('This field is semi-required.')
+      . '">*</span>';
 
   return $altered_label;
 }
