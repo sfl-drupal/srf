@@ -179,22 +179,25 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
 function srf_field_widget_form_validate($element, &$form_state, $form) {
   $validate = FALSE;
   $field_name = $element['#field_name'];
+
   // If the integration with the module workbench_moderation is enabled use the workbench status
   if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) &&
       $form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) {
-    // If the all the values are set and the workbench_moderation_status == workbench_moderation_state_new
+    // If all the values are set and the workbench_moderation_status == workbench_moderation_state_new
     // We will validate the field.
     if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation_status']) &&
         isset($form_state['values']['workbench_moderation_state_new']) &&
         in_array($form_state['values']['workbench_moderation_state_new'], array_filter($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation_status']))
     ) {
       $validate = TRUE;
+      $new_status = $form_state['values']['workbench_moderation_state_new'];
     }
   }
   else {
     if (isset($form_state['values']['status']) && $form_state['values']['status']) {
       // If workbench_moderation is not enabled, validate the field if the node change the status to published
       $validate = TRUE;
+      $new_status = 'published';
     }
   }
   // Validate the field if needed
@@ -204,7 +207,7 @@ function srf_field_widget_form_validate($element, &$form_state, $form) {
     // As $element structure depends on the type of field,
     // let call the right validate function for the field
     if (isset($alter_widget[$field_type]['callback_alter']) && function_exists($alter_widget[$field_type]['callback_validate'])) {
-      $alter_widget[$field_type]['callback_validate']($element, $form_state, $form);
+      $alter_widget[$field_type]['callback_validate']($element, $form_state, $form, $new_status);
     }
     else {
       drupal_set_message(t('To add the semi required validation to <strong>@field_label</strong> field (<em>@field_type</em>), you need to implement hook_srf_alter_widget and configure it according to the !readme_link or the <strong>srf.api.php</strong>.', array(
