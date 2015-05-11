@@ -115,7 +115,7 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
       $form_state['values']['instance']['required'] = 0;
       $form_state['values']['instance']['semi_required'] = 0;
       $form_state['values']['instance']['workbench_moderation'] = 0;
-      $form_state['values']['instance']['workbench_moderation_status'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = array();
       break;
 
     // Semi Required field (only for publication or transitions if workbench_moderation is enabled).
@@ -133,7 +133,7 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
       $form_state['values']['instance']['required'] = 1;
       $form_state['values']['instance']['semi_required'] = 0;
       $form_state['values']['instance']['workbench_moderation'] = 0;
-      $form_state['values']['instance']['workbench_moderation_status'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = array();
       break;
   }
 }
