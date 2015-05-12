@@ -4,6 +4,16 @@
  * Callback function to alter text_long widget.
  * @param  array $element Element to be altered
  */
+function srf_text_alter_widget(&$element) {
+  $element['value']['#title'] = theme('srf_field_label', array(
+    'title' => $element['value']['#title'],
+  ));
+}
+
+/**
+ * Callback function to alter text_long widget.
+ * @param  array $element Element to be altered
+ */
 function srf_text_long_alter_widget(&$element) {
   $element['value']['#title'] = theme('srf_field_label', array(
     'title' => $element['value']['#title'],
@@ -50,4 +60,54 @@ function srf_image_alter_widget(&$element) {
       'title' => $elem['#title'],
     ));
   }
+}
+
+/**
+ * Callback function to alter file widget.
+ * @param  array $element Element to be altered
+ */
+function srf_file_alter_widget(&$element) {
+  foreach ($element as $id => &$elem) {
+    // Check if isset #title because if other module add an #element_validate
+    //  it will be an error because #title will be not defined.
+    if (isset($elem['#title'])) {
+      $elem['#title'] = theme('srf_field_label', array(
+        'title' => $elem['#title'],
+      ));
+    }
+  }
+}
+
+/**
+ * Callback function to alter date* widget.
+ * @param  array $element Element to be altered
+ */
+function srf_date_alter_widget(&$element) {
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+}
+
+/**
+ * Callback function to alter link_field widget.
+ * @param  array $element Element to be altered
+ */
+function srf_link_field_alter_widget(&$element) {
+  dpm($element, "element");
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+}
+
+/**
+ * Callback function to alter email widget.
+ * @param  array $element Element to be altered
+ */
+function srf_email_alter_widget(&$element) {
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+  $element['email']['#title'] = theme('srf_field_label', array(
+    'title' => $element['email']['#title'],
+  ));
 }

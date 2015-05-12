@@ -47,7 +47,7 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
       // Get default value from conf.
       $default_value = 0; // optional
       if (isset($form['#instance']['workbench_moderation']) &&
-          workbench_moderation_node_type_moderated($form['#instance']['bundle']) ){
+          workbench_moderation_node_type_moderated($form['#instance']['bundle'])) {
         $default_value = $form['#instance']['workbench_moderation'];
       }
 
@@ -68,7 +68,10 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
         // Get default value from conf.
         $default_value = array(); // optional
         if (isset($form['#instance']['workbench_moderation_status'])) {
-          $default_value = $form['#instance']['workbench_moderation_status'];
+          // The default_value for checkboxes shoul be an array always.
+          $default_value = is_array($form['#instance']['workbench_moderation_status']) ?
+              $form['#instance']['workbench_moderation_status'] :
+              array($form['#instance']['workbench_moderation_status']);
         }
         // Get the status availabes
         $options = array();
@@ -239,6 +242,11 @@ function srf_get_alter_widget() {
 function srf_srf_alter_widget() {
   $alter_widget = array();
 
+  $alter_widget['text'] = array(
+    'callback_alter' => 'srf_text_alter_widget',
+    'callback_validate' => 'srf_text_validate',
+  );
+
   $alter_widget['text_long'] = array(
     'callback_alter' => 'srf_text_long_alter_widget',
     'callback_validate' => 'srf_text_long_validate',
@@ -262,6 +270,36 @@ function srf_srf_alter_widget() {
   $alter_widget['image'] = array(
     'callback_alter' => 'srf_image_alter_widget',
     'callback_validate' => 'srf_image_validate',
+  );
+
+  $alter_widget['file'] = array(
+    'callback_alter' => 'srf_file_alter_widget',
+    'callback_validate' => 'srf_file_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['date'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_date_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['datetime'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_datetime_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['datestamp'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_datestamp_validate',
+  );
+
+  $alter_widget['link_field'] = array(
+    'callback_alter' => 'srf_link_field_alter_widget',
+    'callback_validate' => 'srf_link_field_validate',
+  );
+
+  $alter_widget['email'] = array(
+    'callback_alter' => 'srf_email_alter_widget',
+    'callback_validate' => 'srf_email_validate',
   );
 
   return $alter_widget;
