@@ -55,10 +55,19 @@ function srf_taxonomy_term_reference_alter_widget(&$element) {
  * @param  array $element Element to be altered
  */
 function srf_image_alter_widget(&$element) {
-  foreach ($element as $id => &$elem) {
-    $elem['#title'] = theme('srf_field_label', array(
-      'title' => $elem['#title'],
+  if (isset($element['#title'])) {
+    $element['#title'] = theme('srf_field_label', array(
+      'title' => $element['#title'],
     ));
+  }
+  else {
+    foreach ($element as $id => &$elem) {
+      if (isset($elem['#title'])) {
+        $elem['#title'] = theme('srf_field_label', array(
+          'title' => $elem['#title'],
+        ));
+      }
+    }
   }
 }
 
