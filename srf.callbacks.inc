@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Callback function to alter text_long widget.
+ * Callback function to alter text widget.
  * @param  array $element Element to be altered
  */
 function srf_text_alter_widget(&$element) {
