@@ -151,12 +151,16 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
     // Include callbacks file.
     module_load_include('inc', 'srf', 'srf.callbacks');
 
-    // Add the validate function to the widget
-    if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
-      $element['#element_validate'][] = 'srf_field_widget_form_validate';
+    // If $element is directly the field
+    if (isset($element['#field_name'])) {
+      _srf_add_validate_function($element);
     }
+
+    // It may be an array of fields, so we have to iterate
     else {
-      $element['#element_validate'] = array('srf_field_widget_form_validate');
+      foreach ($element as $delta => &$elem) {
+        _srf_add_validate_function($element[$delta]);
+      }
     }
 
     // As $element structure depends on the type of field,
@@ -175,6 +179,18 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
     }
   }
 }
+
+/**
+ * Helper function to add validate function to a field.
+ */
+ function _srf_add_validate_function(&$element) {
+  if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
+    $element['#element_validate'][] = 'srf_field_widget_form_validate';
+  }
+  else {
+    $element['#element_validate'] = array('srf_field_widget_form_validate');
+  }
+ }
 
 /**
  * Implements hook_field_widget_form_validate().
