@@ -76,13 +76,18 @@ function srf_image_alter_widget(&$element) {
  * @param  array $element Element to be altered
  */
 function srf_file_alter_widget(&$element) {
-  foreach ($element as $id => &$elem) {
-    // Check if isset #title because if other module add an #element_validate
-    //  it will be an error because #title will be not defined.
-    if (isset($elem['#title'])) {
-      $elem['#title'] = theme('srf_field_label', array(
-        'title' => $elem['#title'],
-      ));
+  if (isset($element['#title'])) {
+    $element['#title'] = theme('srf_field_label', array(
+      'title' => $element['#title'],
+    ));
+  }
+  else {
+    foreach ($element as $id => &$elem) {
+      if (isset($elem['#title'])) {
+        $elem['#title'] = theme('srf_field_label', array(
+          'title' => $elem['#title'],
+        ));
+      }
     }
   }
 }
