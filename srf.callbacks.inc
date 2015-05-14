@@ -51,28 +51,7 @@ function srf_taxonomy_term_reference_alter_widget(&$element) {
 }
 
 /**
- * Callback function to alter image widget.
- * @param  array $element Element to be altered
- */
-function srf_image_alter_widget(&$element) {
-  if (isset($element['#title'])) {
-    $element['#title'] = theme('srf_field_label', array(
-      'title' => $element['#title'],
-    ));
-  }
-  else {
-    foreach ($element as $id => &$elem) {
-      if (isset($elem['#title'])) {
-        $elem['#title'] = theme('srf_field_label', array(
-          'title' => $elem['#title'],
-        ));
-      }
-    }
-  }
-}
-
-/**
- * Callback function to alter file widget.
+ * Callback function to alter file or image widget.
  * @param  array $element Element to be altered
  */
 function srf_file_alter_widget(&$element) {

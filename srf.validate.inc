@@ -84,65 +84,37 @@ function srf_taxonomy_term_reference_validate($element, &$form_state, $form, $ne
 }
 
 /**
- * Helper function to check filling image fields.
+ * Helper function to check filling file or image fields.
  *
- * For image field, we must pass the arguments with a default value as NULL
+ * For file or image field, we must pass the arguments with a default value as NULL
  * and then check if they are not null, because we want to call this validate
  * function only when form is submitted (but not when «Upload» button is clicked).
  */
-function srf_image_validate($element, &$form_state = NULL, $form = NULL, $new_status = NULL) {
+function srf_file_validate($element, &$form_state = NULL, $form = NULL, $new_status = NULL) {
 
   if ($element && $form_state && $form && $new_status) {
 
     // If $element is directly the field
     if (isset($element['#field_name'])) {
-      _srf_helper_image_validate($element, $form_state, $form, $new_status);
+      _srf_helper_file_validate($element, $form_state, $form, $new_status);
     }
 
     // It may be an array of fields, so we have to iterate
     else {
       foreach ($element as $delta => &$elem) {
-        _srf_helper_image_validate($element[$delta], $form_state, $form, $new_status);
+        _srf_helper_file_validate($element[$delta], $form_state, $form, $new_status);
       }
     }
   }
 }
 
-function _srf_helper_image_validate(&$element, &$form_state, $form, $new_status) {
+function _srf_helper_file_validate(&$element, &$form_state, $form, $new_status) {
   $field_name = $element['#field_name'];
   $field_language = field_language($form['#entity_type'], $form_state['node'], $field_name);
   $field_values = $form_state['values'][$field_name][$field_language];
   if (!$field_values[0]['fid']) {
     $field_label = srf_clean_field_label($element['#title']);
     srf_print_field_warning($field_name, $field_label, $new_status);
-  }
-}
-
-/**
- * Helper function to check filling file fields.
- *
- * Arguments are passed with a default value as NULL
- * for the same reason as image field.
- * @see srf_image_validate()
- */
-function srf_file_validate($element, &$form_state = NULL, $form = NULL, $new_status = NULL) {
-
-  // For the file, we must pass the arguments with a default value and check if
-  // the value is set, because the call to the function validate is made when
-  // the user try to upload it and in that moment, the form has not been submited.
-  if ($element && $form_state && $form && $new_status) {
-    foreach ($element as $id => &$elem) {
-      if (!isset($elem['#field_name'])) {
-        continue;
-      }
-      $field_name = $elem['#field_name'];
-      $field_language = field_language($form['#entity_type'], $form_state['node'], $field_name);
-      $field_values = $form_state['values'][$field_name][$field_language];
-      if (!$field_values[0]['fid']) {
-        $field_label = srf_clean_field_label($elem['#title']);
-        srf_print_field_warning($field_name, $field_label, $new_status);
-      }
-    }
   }
 }
 
