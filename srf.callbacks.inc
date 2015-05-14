@@ -1,6 +1,16 @@
 <?php
 
 /**
+ * Callback function to alter text widget.
+ * @param  array $element Element to be altered
+ */
+function srf_text_alter_widget(&$element) {
+  $element['value']['#title'] = theme('srf_field_label', array(
+    'title' => $element['value']['#title'],
+  ));
+}
+
+/**
  * Callback function to alter text_long widget.
  * @param  array $element Element to be altered
  */
@@ -45,9 +55,73 @@ function srf_taxonomy_term_reference_alter_widget(&$element) {
  * @param  array $element Element to be altered
  */
 function srf_image_alter_widget(&$element) {
-  foreach ($element as $id => &$elem) {
-    $elem['#title'] = theme('srf_field_label', array(
-      'title' => $elem['#title'],
+  if (isset($element['#title'])) {
+    $element['#title'] = theme('srf_field_label', array(
+      'title' => $element['#title'],
     ));
   }
+  else {
+    foreach ($element as $id => &$elem) {
+      if (isset($elem['#title'])) {
+        $elem['#title'] = theme('srf_field_label', array(
+          'title' => $elem['#title'],
+        ));
+      }
+    }
+  }
+}
+
+/**
+ * Callback function to alter file widget.
+ * @param  array $element Element to be altered
+ */
+function srf_file_alter_widget(&$element) {
+  if (isset($element['#title'])) {
+    $element['#title'] = theme('srf_field_label', array(
+      'title' => $element['#title'],
+    ));
+  }
+  else {
+    foreach ($element as $id => &$elem) {
+      if (isset($elem['#title'])) {
+        $elem['#title'] = theme('srf_field_label', array(
+          'title' => $elem['#title'],
+        ));
+      }
+    }
+  }
+}
+
+/**
+ * Callback function to alter date* widget.
+ * @param  array $element Element to be altered
+ */
+function srf_date_alter_widget(&$element) {
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+}
+
+/**
+ * Callback function to alter link_field widget.
+ * @param  array $element Element to be altered
+ */
+function srf_link_field_alter_widget(&$element) {
+  dpm($element, "element");
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+}
+
+/**
+ * Callback function to alter email widget.
+ * @param  array $element Element to be altered
+ */
+function srf_email_alter_widget(&$element) {
+  $element['#title'] = theme('srf_field_label', array(
+    'title' => $element['#title'],
+  ));
+  $element['email']['#title'] = theme('srf_field_label', array(
+    'title' => $element['email']['#title'],
+  ));
 }

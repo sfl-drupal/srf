@@ -47,7 +47,7 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
       // Get default value from conf.
       $default_value = 0; // optional
       if (isset($form['#instance']['workbench_moderation']) &&
-          workbench_moderation_node_type_moderated($form['#instance']['bundle']) ){
+          workbench_moderation_node_type_moderated($form['#instance']['bundle'])) {
         $default_value = $form['#instance']['workbench_moderation'];
       }
 
@@ -68,7 +68,10 @@ function srf_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id)
         // Get default value from conf.
         $default_value = array(); // optional
         if (isset($form['#instance']['workbench_moderation_status'])) {
-          $default_value = $form['#instance']['workbench_moderation_status'];
+          // The default_value for checkboxes shoul be an array always.
+          $default_value = is_array($form['#instance']['workbench_moderation_status']) ?
+              $form['#instance']['workbench_moderation_status'] :
+              array($form['#instance']['workbench_moderation_status']);
         }
         // Get the status availabes
         $options = array();
@@ -115,7 +118,7 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
       $form_state['values']['instance']['required'] = 0;
       $form_state['values']['instance']['semi_required'] = 0;
       $form_state['values']['instance']['workbench_moderation'] = 0;
-      $form_state['values']['instance']['workbench_moderation_status'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = array();
       break;
 
     // Semi Required field (only for publication or transitions if workbench_moderation is enabled).
@@ -133,7 +136,7 @@ function srf_field_ui_field_edit_form_validate(&$form, &$form_state) {
       $form_state['values']['instance']['required'] = 1;
       $form_state['values']['instance']['semi_required'] = 0;
       $form_state['values']['instance']['workbench_moderation'] = 0;
-      $form_state['values']['instance']['workbench_moderation_status'] = 0;
+      $form_state['values']['instance']['workbench_moderation_status'] = array();
       break;
   }
 }
@@ -148,12 +151,16 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
     // Include callbacks file.
     module_load_include('inc', 'srf', 'srf.callbacks');
 
-    // Add the validate function to the widget
-    if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
-      $element['#element_validate'][] = 'srf_field_widget_form_validate';
+    // If $element is directly the field
+    if (isset($element['#field_name'])) {
+      _srf_add_validate_function($element);
     }
+
+    // It may be an array of fields, so we have to iterate
     else {
-      $element['#element_validate'] = array('srf_field_widget_form_validate');
+      foreach ($element as $delta => &$elem) {
+        _srf_add_validate_function($element[$delta]);
+      }
     }
 
     // As $element structure depends on the type of field,
@@ -172,6 +179,18 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
     }
   }
 }
+
+/**
+ * Helper function to add validate function to a field.
+ */
+ function _srf_add_validate_function(&$element) {
+  if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
+    $element['#element_validate'][] = 'srf_field_widget_form_validate';
+  }
+  else {
+    $element['#element_validate'] = array('srf_field_widget_form_validate');
+  }
+ }
 
 /**
  * Implements hook_field_widget_form_validate().
@@ -239,6 +258,11 @@ function srf_get_alter_widget() {
 function srf_srf_alter_widget() {
   $alter_widget = array();
 
+  $alter_widget['text'] = array(
+    'callback_alter' => 'srf_text_alter_widget',
+    'callback_validate' => 'srf_text_validate',
+  );
+
   $alter_widget['text_long'] = array(
     'callback_alter' => 'srf_text_long_alter_widget',
     'callback_validate' => 'srf_text_long_validate',
@@ -262,6 +286,36 @@ function srf_srf_alter_widget() {
   $alter_widget['image'] = array(
     'callback_alter' => 'srf_image_alter_widget',
     'callback_validate' => 'srf_image_validate',
+  );
+
+  $alter_widget['file'] = array(
+    'callback_alter' => 'srf_file_alter_widget',
+    'callback_validate' => 'srf_file_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['date'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_date_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['datetime'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_datetime_validate',
+  );
+  // Using the same callback_alter to all types of date fields
+  $alter_widget['datestamp'] = array(
+    'callback_alter' => 'srf_date_alter_widget',
+    'callback_validate' => 'srf_datestamp_validate',
+  );
+
+  $alter_widget['link_field'] = array(
+    'callback_alter' => 'srf_link_field_alter_widget',
+    'callback_validate' => 'srf_link_field_validate',
+  );
+
+  $alter_widget['email'] = array(
+    'callback_alter' => 'srf_email_alter_widget',
+    'callback_validate' => 'srf_email_validate',
   );
 
   return $alter_widget;
