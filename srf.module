@@ -284,8 +284,8 @@ function srf_srf_alter_widget() {
   );
 
   $alter_widget['image'] = array(
-    'callback_alter' => 'srf_image_alter_widget',
-    'callback_validate' => 'srf_image_validate',
+    'callback_alter' => 'srf_file_alter_widget',
+    'callback_validate' => 'srf_file_validate',
   );
 
   $alter_widget['file'] = array(
