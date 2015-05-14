@@ -283,26 +283,23 @@ function srf_srf_alter_widget() {
     'callback_validate' => 'srf_taxonomy_term_reference_validate',
   );
 
-  $alter_widget['image'] = array(
-    'callback_alter' => 'srf_file_alter_widget',
-    'callback_validate' => 'srf_file_validate',
-  );
-
+  // Use same callback functions for file and image field types
   $alter_widget['file'] = array(
     'callback_alter' => 'srf_file_alter_widget',
     'callback_validate' => 'srf_file_validate',
   );
-  // Using the same callback_alter to all types of date fields
+  $alter_widget['image'] = $alter_widget['file'];
+
+  // Use same callback_alter function for all date field types
+  // but different callback_validate functions.
   $alter_widget['date'] = array(
     'callback_alter' => 'srf_date_alter_widget',
     'callback_validate' => 'srf_date_validate',
   );
-  // Using the same callback_alter to all types of date fields
   $alter_widget['datetime'] = array(
     'callback_alter' => 'srf_date_alter_widget',
     'callback_validate' => 'srf_datetime_validate',
   );
-  // Using the same callback_alter to all types of date fields
   $alter_widget['datestamp'] = array(
     'callback_alter' => 'srf_date_alter_widget',
     'callback_validate' => 'srf_datestamp_validate',
