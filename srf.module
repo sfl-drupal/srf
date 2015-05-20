@@ -174,7 +174,7 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
       drupal_set_message(t('To alter the widget title and add the semi required validation to <strong>@field_label</strong> field (<em>@field_type</em>), you need to implement hook_srf_alter_widget and configure it according to the !readme_link or the <strong>srf.api.php</strong>.', array(
         '@field_label' => $context['instance']['label'],
         '@field_type' => $field_type,
-        '!readme_link' => l('README.txt', drupal_get_path('module', 'srf') . '/README.txt', array('attributes' => array('target' => '_blank'))),
+        '!readme_link' => l('README.md', drupal_get_path('module', 'srf') . '/README.md'),
           )), 'warning');
     }
   }
@@ -183,14 +183,14 @@ function srf_field_widget_form_alter(&$element, &$form_state, $context) {
 /**
  * Helper function to add validate function to a field.
  */
- function _srf_add_validate_function(&$element) {
+function _srf_add_validate_function(&$element) {
   if (isset($element['#element_validate']) && is_array($element['#element_validate'])) {
     $element['#element_validate'][] = 'srf_field_widget_form_validate';
   }
   else {
     $element['#element_validate'] = array('srf_field_widget_form_validate');
   }
- }
+}
 
 /**
  * Implements hook_field_widget_form_validate().
@@ -254,34 +254,39 @@ function srf_get_alter_widget() {
 
 /**
  * Implements hook_srf_alter_widget().
+ *
+ * @see srf.callbacks.inc for callback_alter functions
+ * @see srf.validate.inc for callback_validate functions
  */
 function srf_srf_alter_widget() {
+
+  // Same callback functions are use in differents types of fields
+  // because some fields has similar data structures.
   $alter_widget = array();
 
+  // Use same callback_validate functions for all text field types
+  // but different callback_alter for text_with_summary field type.
   $alter_widget['text'] = array(
-    'callback_alter' => 'srf_text_alter_widget',
-    'callback_validate' => 'srf_text_validate',
+    'callback_alter' => 'srf_field_alter_widget',
+    'callback_validate' => 'srf_field_validate',
   );
+  $alter_widget['text_long'] = $alter_widget['text'];
+  $alter_widget['text_with_summary'] = $alter_widget['text'];
+  $alter_widget['text_with_summary']['callback_alter'] = 'srf_text_with_summary_alter_widget';
 
-  $alter_widget['text_long'] = array(
-    'callback_alter' => 'srf_text_long_alter_widget',
-    'callback_validate' => 'srf_text_long_validate',
-  );
+  // Use same callback_alter function for all date field types
+  // same callbacks as text field.
+  $alter_widget['date'] = $alter_widget['text'];
+  $alter_widget['datetime'] = $alter_widget['date'];
+  $alter_widget['datestamp'] = $alter_widget['date'];
 
-  $alter_widget['text_with_summary'] = array(
-    'callback_alter' => 'srf_text_with_summary_alter_widget',
-    'callback_validate' => 'srf_text_with_summary_validate',
-  );
+  // Use same callback_alter functions that is used for the text field types
+  // but differents callback_validate.
+  $alter_widget['taxonomy_term_reference'] = $alter_widget['text'];
+  $alter_widget['taxonomy_term_reference']['callback_validate'] = 'srf_taxonomy_term_reference_validate';
 
-  $alter_widget['entityreference'] = array(
-    'callback_alter' => 'srf_entityreference_alter_widget',
-    'callback_validate' => 'srf_entityreference_validate',
-  );
-
-  $alter_widget['taxonomy_term_reference'] = array(
-    'callback_alter' => 'srf_taxonomy_term_reference_alter_widget',
-    'callback_validate' => 'srf_taxonomy_term_reference_validate',
-  );
+  $alter_widget['link_field'] = $alter_widget['text'];
+  $alter_widget['link_field']['callback_validate'] = 'srf_link_field_validate';
 
   // Use same callback functions for file and image field types
   $alter_widget['file'] = array(
@@ -290,26 +295,13 @@ function srf_srf_alter_widget() {
   );
   $alter_widget['image'] = $alter_widget['file'];
 
-  // Use same callback_alter function for all date field types
-  // but different callback_validate functions.
-  $alter_widget['date'] = array(
-    'callback_alter' => 'srf_date_alter_widget',
-    'callback_validate' => 'srf_date_validate',
-  );
-  $alter_widget['datetime'] = array(
-    'callback_alter' => 'srf_date_alter_widget',
-    'callback_validate' => 'srf_datetime_validate',
-  );
-  $alter_widget['datestamp'] = array(
-    'callback_alter' => 'srf_date_alter_widget',
-    'callback_validate' => 'srf_datestamp_validate',
+  // Entityreference field type callbacks
+  $alter_widget['entityreference'] = array(
+    'callback_alter' => 'srf_entityreference_alter_widget',
+    'callback_validate' => 'srf_entityreference_validate',
   );
 
-  $alter_widget['link_field'] = array(
-    'callback_alter' => 'srf_link_field_alter_widget',
-    'callback_validate' => 'srf_link_field_validate',
-  );
-
+  // Email field type callbacks
   $alter_widget['email'] = array(
     'callback_alter' => 'srf_email_alter_widget',
     'callback_validate' => 'srf_email_validate',
