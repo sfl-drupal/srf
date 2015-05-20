@@ -22,9 +22,9 @@ function srf_field_alter_widget(&$element) {
  */
 function srf_text_with_summary_alter_widget(&$element) {
   srf_field_alter_widget($element);
-  // $element['summary']['#title'] = theme('srf_field_label', array(
-  //   'title' => $element['summary']['#title'],
-  // ));
+  $element['summary']['#title'] = theme('srf_field_label', array(
+    'title' => $element['summary']['#title'],
+  ));
 }
 
 /**
