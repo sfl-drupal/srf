@@ -52,7 +52,8 @@ function srf_taxonomy_term_reference_validate($element, &$form_state, $form, $ne
   $field_name = $element['#field_name'];
   $field_language = field_language($form['#entity_type'], $form_state['node'], $field_name);
   $field_values = $form_state['values'][$field_name][$field_language];
-  if (empty($field_values) || $field_values[0]['tid']== NULL) {
+  // Here we must check if its empty or if the tid = NULL beacuse with the select widget the user can select -None-
+  if (empty($field_values) || $field_values[0]['tid'] == NULL) {
     $field_label = _srf_clean_field_label($element['#title']);
     _srf_print_field_warning($field_name, $field_label, $new_status);
   }
