@@ -14,6 +14,10 @@ function srf_field_alter_widget(&$element) {
   $element['#title'] = theme('srf_field_label', array(
     'title' => $element['#title'],
   ));
+
+  if (isset($element['value']['#title'])) {
+    $element['value']['#title'] = $element['#title'];
+  }
 }
 
 /**
