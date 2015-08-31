@@ -199,8 +199,8 @@ function srf_field_widget_form_validate($element, &$form_state, $form) {
   $validate = FALSE;
   $field_name = $element['#field_name'];
 
-  // If we are not deleting the node we will check the need for validation
-  if (array_search('node_form_delete_submit', $form_state['submit_handlers'], TRUE) === FALSE) {
+  // If we are saving the node we will check the need for validation
+  if (array_search('node_form_submit', $form_state['submit_handlers'], TRUE) !== FALSE) {
 
     // If the integration with the module workbench_moderation is enabled use the workbench status
     if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) &&
