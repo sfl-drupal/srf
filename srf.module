@@ -199,10 +199,19 @@ function srf_field_widget_form_validate($element, &$form_state, $form) {
   $validate = FALSE;
   $field_name = $element['#field_name'];
 
-  // If we are saving the node we will check the need for validation
-  if (array_search('node_form_submit', $form_state['submit_handlers'], TRUE) !== FALSE) {
+  // If we are saving the node the submit handlers should be like
+  // node_form_submit, i18n_node_form_submit,  workbench_moderation_node_form_submit etc.
+  $node_submit = FALSE;
+  foreach ($form_state['submit_handlers'] as $submit_handler){
+    if (strstr($submit_handler, 'node_form_submit') !== FALSE){
+      $node_submit = TRUE;
+      break;
+    }
+  }
 
-    // If the integration with the module workbench_moderation is enabled use the workbench status
+  // If we are saving the node we will check the need for validation
+  if ($node_submit) {
+  // If the integration with the module workbench_moderation is enabled use the workbench status
     if (isset($form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) &&
         $form_state['field'][$field_name][LANGUAGE_NONE]['instance']['workbench_moderation']) {
       // If all the values are set and the workbench_moderation_status == workbench_moderation_state_new
