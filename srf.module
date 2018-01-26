@@ -202,10 +202,12 @@ function srf_field_widget_form_validate($element, &$form_state, $form) {
   // If we are saving the node the submit handlers should be like
   // node_form_submit, i18n_node_form_submit,  workbench_moderation_node_form_submit etc.
   $node_submit = FALSE;
-  foreach ($form_state['submit_handlers'] as $submit_handler){
-    if (strstr($submit_handler, 'node_form_submit') !== FALSE){
-      $node_submit = TRUE;
-      break;
+  if (isset($form_state['submit_handlers'])) {
+    foreach ($form_state['submit_handlers'] as $submit_handler){
+      if (strstr($submit_handler, 'node_form_submit') !== FALSE){
+        $node_submit = TRUE;
+        break;
+      }
     }
   }
 
